@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "option-feature-io"
+version = "0.1.0a1"
+description = "Strict option-native transport and atomic generation storage"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["option-feature-contracts==0.1.0a1", "duckdb==1.5.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+option_feature_io = ["_build_identity.json"]
