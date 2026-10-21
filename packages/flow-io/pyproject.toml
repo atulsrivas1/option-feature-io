@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "option-flow-io"
+version = "0.1.0a1"
+description = "Closed synthetic option-flow transport and atomic DuckDB storage"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = ["option-flow-contracts==0.1.0a1", "duckdb==1.5.6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+option_flow_io = ["_build_identity.json"]
