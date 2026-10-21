@@ -21,6 +21,17 @@ from option_flow_io import (
 )
 
 
+def attack_json(payload):
+    """Test-only malicious bytes; never call a validating codec on corruption."""
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True,
+                      separators=(",", ":")).encode("utf-8")
+
+
+def attack_record_digest(record_type, payload):
+    return sha256(b"option-flow-record1\n" + record_type.encode("ascii") +
+                  b"\n" + attack_json(payload)).hexdigest()
+
+
 def literal_snapshot():
     binding = FlowBinding("synthetic", "tiny-tape", "1", "0" * 64,
                           "synthetic", "Original synthetic test facts")
@@ -347,7 +358,13 @@ class StorageTests(unittest.TestCase):
         # Valid field types and freshly bound digests do not fix the mismatch
         # between the group's declared underlying and its actual reference.
         history = replace(checkpoint.history, groups=(replace(checkpoint.history.groups[0], underlying_id="other"),))
-        digest = flow_record_digest("flow_snapshot", history)
+        # Start with valid canonical source bytes, then independently mutate and
+        # hash the malicious payload. Public codecs correctly refuse this input.
+        history_payload = json.loads(flow_canonical_bytes(checkpoint.history))
+        self.assertEqual(attack_record_digest("flow_snapshot", history_payload),
+                         flow_record_digest("flow_snapshot", checkpoint.history))
+        history_payload["groups"][0]["underlying_id"] = "other"
+        digest = attack_record_digest("flow_snapshot", history_payload)
         work = sha256(b"option-flow-work1\n" + json.dumps(
             [digest, publication.request_sha256, publication.cohort_sha256, None],
             separators=(",", ":")).encode()).hexdigest()
@@ -359,22 +376,26 @@ class StorageTests(unittest.TestCase):
             self.assertIsNone(sink.read("run"))
 
     def test_semantically_bad_stored_result_rejected_even_with_rebound_metadata(self):
-        from option_flow_io.sink import _metadata
         publication = literal_publication(with_result=True)
-        malformed_result = replace(publication.results[0], unit="contracts")
-        malformed = replace(publication, results=(malformed_result,))
+        payload = json.loads(flow_canonical_bytes(publication))
+        self.assertEqual(attack_record_digest("flow_publication", payload),
+                         flow_record_digest("flow_publication", publication))
+        payload["results"][0]["unit"] = "contracts"
         with FlowDuckDBSink(self.path) as sink:
             sink.publish(publication)
         # Simulate external corruption that consistently rehashes every changed
         # row. Integrity hashes alone must not admit semantically invalid output.
         connection = duckdb.connect(self.path)
         try:
+            metadata = list(connection.execute("SELECT * FROM flow_generations WHERE run_key='run'").fetchone())
+            metadata[6] = attack_record_digest("flow_results", payload["results"])
+            metadata[9] = attack_record_digest("flow_publication", payload)
+            metadata[12] = attack_json(payload).decode("utf-8")
             connection.execute("DELETE FROM flow_generations")
-            metadata = _metadata(malformed)
             connection.execute("INSERT INTO flow_generations VALUES (" + ",".join("?" for _ in metadata) + ")", metadata)
             connection.execute("UPDATE flow_result_rows SET record_sha256=?,canonical_json=?", (
-                flow_record_digest("flow_result", malformed_result),
-                flow_canonical_bytes(malformed_result).decode()))
+                attack_record_digest("flow_result", payload["results"][0]),
+                attack_json(payload["results"][0]).decode("utf-8")))
         finally:
             connection.close()
         with FlowDuckDBSink(self.path) as sink:
@@ -385,20 +406,24 @@ class StorageTests(unittest.TestCase):
 
 
     def test_forged_stored_checkpoint_rejected_even_with_rebound_metadata(self):
-        from option_flow_io.sink import _metadata
         publication = literal_publication()
-        malformed = replace(publication, output_checkpoint=replace(
-            publication.output_checkpoint, policy_sha256="2" * 64))
+        payload = json.loads(flow_canonical_bytes(publication))
+        self.assertEqual(attack_record_digest("flow_publication", payload),
+                         flow_record_digest("flow_publication", publication))
+        payload["output_checkpoint"]["policy_sha256"] = "2" * 64
         with FlowDuckDBSink(self.path) as sink:
             sink.publish(publication)
         connection = duckdb.connect(self.path)
         try:
+            metadata = list(connection.execute("SELECT * FROM flow_generations WHERE run_key='run'").fetchone())
+            metadata[8] = attack_record_digest("flow_checkpoint", payload["output_checkpoint"])
+            metadata[9] = attack_record_digest("flow_publication", payload)
+            metadata[12] = attack_json(payload).decode("utf-8")
             connection.execute("DELETE FROM flow_generations")
-            metadata = _metadata(malformed)
             connection.execute("INSERT INTO flow_generations VALUES (" + ",".join("?" for _ in metadata) + ")", metadata)
             connection.execute("UPDATE flow_checkpoints SET record_sha256=?,canonical_json=?", (
-                flow_record_digest("flow_checkpoint", malformed.output_checkpoint),
-                flow_canonical_bytes(malformed.output_checkpoint).decode()))
+                attack_record_digest("flow_checkpoint", payload["output_checkpoint"]),
+                attack_json(payload["output_checkpoint"]).decode("utf-8")))
         finally:
             connection.close()
         with FlowDuckDBSink(self.path) as sink:
