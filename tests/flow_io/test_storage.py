@@ -196,7 +196,7 @@ class StorageTests(unittest.TestCase):
     def _corrupt(self, statement):
         with FlowDuckDBSink(self.path) as sink:
             sink.publish(literal_publication(with_result=True))
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         try:
             connection.execute(statement)
         finally:
@@ -238,7 +238,7 @@ class StorageTests(unittest.TestCase):
         publication = literal_publication(with_checkpoint=False)
         with FlowDuckDBSink(self.path) as sink:
             sink.publish(publication)
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         try:
             connection.execute("INSERT INTO flow_checkpoints VALUES ('run',?,?)", (
                 "0" * 64, flow_canonical_bytes(literal_publication().output_checkpoint).decode()))
@@ -260,7 +260,7 @@ class StorageTests(unittest.TestCase):
             FlowDuckDBSink(self.path)
 
     def test_r25_or_unknown_schema_never_migrated(self):
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         connection.execute("CREATE TABLE option_schema(version VARCHAR PRIMARY KEY)")
         connection.close()
         with self.assertRaises(StorageSchemaError):
@@ -269,14 +269,14 @@ class StorageTests(unittest.TestCase):
     def test_extra_index_rejected(self):
         with FlowDuckDBSink(self.path):
             pass
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         connection.execute("CREATE INDEX unexpected ON flow_generations(work_sha256)")
         connection.close()
         with self.assertRaises(StorageSchemaError):
             FlowDuckDBSink(self.path)
 
     def test_extra_schema_rejected_without_tables(self):
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         connection.execute("CREATE SCHEMA unexpected")
         connection.close()
         with self.assertRaises(StorageSchemaError):
@@ -285,7 +285,7 @@ class StorageTests(unittest.TestCase):
     def test_unknown_column_never_migrated(self):
         with FlowDuckDBSink(self.path):
             pass
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         connection.execute("ALTER TABLE flow_generations ADD COLUMN unexpected VARCHAR")
         connection.close()
         with self.assertRaises(StorageSchemaError):
@@ -385,7 +385,7 @@ class StorageTests(unittest.TestCase):
             sink.publish(publication)
         # Simulate external corruption that consistently rehashes every changed
         # row. Integrity hashes alone must not admit semantically invalid output.
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         try:
             metadata = list(connection.execute("SELECT * FROM flow_generations WHERE run_key='run'").fetchone())
             metadata[6] = attack_record_digest("flow_results", payload["results"])
@@ -413,7 +413,7 @@ class StorageTests(unittest.TestCase):
         payload["output_checkpoint"]["policy_sha256"] = "2" * 64
         with FlowDuckDBSink(self.path) as sink:
             sink.publish(publication)
-        connection = duckdb.connect(self.path)
+        connection = duckdb.connect(self.path, config={"threads": 1})
         try:
             metadata = list(connection.execute("SELECT * FROM flow_generations WHERE run_key='run'").fetchone())
             metadata[8] = attack_record_digest("flow_checkpoint", payload["output_checkpoint"])

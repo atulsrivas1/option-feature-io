@@ -147,3 +147,7 @@ checked the three test-only fixture changes, their independent malicious byte/ha
 construction and the raw DEV03/DEV04 receipts. No production change or repeat
 runtime was performed during this review. Artifact builds/installs, exact committed
 closure qualification, worker/stored integration and release gates remain open.
+
+## Explicit qualification-fixture thread profile
+
+Eight direct connections used solely to construct/corrupt synthetic test databases now explicitly request DuckDB threads1, matching the actual sink profile. This changes only fixture resource configuration; production sink/calculations, SQL attacks and expected semantics are unchanged. Earlier31-method receipts retain their original inputs and are not retroactively described as measured one-thread proofs. Fresh installed qualification will bind the updated test source with explicit connections; logical reservation is not RSS enforcement.
