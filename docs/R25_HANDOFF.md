@@ -1,6 +1,6 @@
 # R25 I/O contract preparation
 
-Canonical EQ185; governance [GOV037 #581](https://github.com/atulsrivas1/equity-features/issues/581). Source-only preparation; EQ146 and reviewed contracts block implementation. See the [option contract draft](https://github.com/atulsrivas1/option-features/tree/codex/r25-contracts/docs/r25).
+Canonical EQ185; governance [GOV037 #581](https://github.com/atulsrivas1/equity-features/issues/581). Source-only preparation. Owner approved independent R25 progression: reviewed frozen R25 contracts, compatible interface choices and story readiness gate implementation; R18/EQ146 and EQ143/EQ144 acceptance are no longer blanket R25 prerequisites. R25 still owns its executor/resource, exact artifact, numerical and integrated qualification; none is claimed passed. See the [option contract draft](https://github.com/atulsrivas1/option-features/tree/codex/r25-contracts/docs/r25).
 
 Own I/O code only in this repository. The canonical contract owner is option-features; no independent amendment by a layer worker. Initial option package versions and dependency artifact locks are proposals, not built/released packages. Preserve source/contract/underlying identity, contracts versus shares, event/known-at, supplied/computed provenance and independently ready outputs.
 
