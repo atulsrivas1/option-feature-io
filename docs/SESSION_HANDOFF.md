@@ -4,6 +4,29 @@ The owner reaffirmed that local builds and local test runs provide merge validat
 
 # R25 preparation handoff
 
+## Windows attempt-01 failure and corrective candidate
+
+The coordinator's actual Windows qualification attempt-01 ran the installed
+I/O wheel from source `9b598762433b9432e5cc338db4994f057378c74d`:
+22 tests passed and one errored. This attempt FAILED. The original
+`test_request_roundtrip_and_raised_decoder_limits` exposed `_decode` catching
+the structural `ContractValidationError` from caller limit admission and
+relabeling it as invalid JSON. Contracts/features test results are separately
+owned coordinator evidence and are not inferred from this I/O report.
+
+The corrective source candidate moves byte/text/limit preflight before the
+JSON parser's exception-conversion block, preserving structural admission
+errors before malformed payload parsing. The original failing test is retained
+unchanged. A new authored regression checks every decoder with raised byte
+limits and zero record limits, asserting the structural code/path. There are
+now24 test definitions. This corrective candidate has not been runtime-tested
+or rebuilt; attempt-01 remains historical failing evidence. No qualification
+environment or receipt was modified. Coordinator and fresh independent review
+precede push; the coordinator owns rebuilding/retesting the next exact head.
+
+Source-only corrective checks: Windows PowerShell/Python3.12.10 `ast.parse`
+over all ten Python source/test/example files and `git diff --check` pass.
+
 ## EQ185 source authoring checkpoint
 
 Fresh layer author `/root/r25_io_implementation` started actual source work on

@@ -72,8 +72,11 @@ def _encode(record_type, value):
 
 
 def _decode(record_type, data, limits):
+    # Caller admission errors retain their structural contract type and precede
+    # parsing; only failures originating in the JSON parser are wire failures.
+    text = _text(data, limits)
     try:
-        raw = json.loads(_text(data, limits), object_pairs_hook=_pairs,
+        raw = json.loads(text, object_pairs_hook=_pairs,
                          parse_constant=_nonfinite)
     except (ValueError, RecursionError) as exc:
         if isinstance(exc, WireFormatError):

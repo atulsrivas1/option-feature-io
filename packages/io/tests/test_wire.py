@@ -74,6 +74,16 @@ class WireTests(unittest.TestCase):
         with self.assertRaises(ContractValidationError):
             decode_request(b"not-json", replace(R25_LIMITS, max_wire_bytes=16777217))
 
+    def test_caller_limit_error_precedes_malformed_wire_in_every_decoder(self):
+        for decoder in (decode_request, decode_snapshot, decode_results):
+            for limits in (replace(R25_LIMITS, max_wire_bytes=16777217),
+                           replace(R25_LIMITS, max_snapshot_records=0)):
+                with self.subTest(decoder=decoder.__name__, limits=limits):
+                    with self.assertRaises(ContractValidationError) as raised:
+                        decoder(b"not-json", limits)
+                    self.assertEqual(raised.exception.code, "admission_limit_exceeded")
+                    self.assertTrue(raised.exception.path.startswith("/limits/"))
+
     def test_exact_decimal_payload_roundtrip(self):
         payload = deepcopy(EMPTY)
         payload["bindings"] = [BINDING]
