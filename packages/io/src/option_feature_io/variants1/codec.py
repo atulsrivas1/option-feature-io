@@ -144,16 +144,6 @@ def _name(record_type):
     return name if name in RECORDS else None
 
 
-def _shape(payload, name, root):
-    """Stage 3 closed-record check; a field-set defect is reported at its record."""
-    try:
-        validate_shape(payload, name, root)
-    except VariantValidationError as exc:
-        if exc.code == "field_set" and exc.stage == 3:
-            exc.path = exc.path.rsplit("/", 1)[0]
-        raise
-
-
 def record_sha256(record_type, payload):
     return record_digest(record_type, payload)
 
@@ -163,7 +153,7 @@ def encode_record(record_type, payload, limits=None):
     name = _name(record_type)
     if name is None:
         fail("unsupported_schema", "/envelope/record_type", None)
-    _shape(payload, name, "/envelope/payload")
+    validate_shape(payload, name, "/envelope/payload")
     validate_scalars(payload, name, "/envelope/payload")
     envelope = {
         "content_sha256": content_digest(record_type, payload),
@@ -218,7 +208,7 @@ def decode_record(raw, record_type, limits=None):
     if type(claimed) is not str:
         fail("type_mismatch", "/envelope/content_sha256", 3)
     payload = value["payload"]
-    _shape(payload, name, "/envelope/payload")
+    validate_shape(payload, name, "/envelope/payload")
     if not _HASH.match(claimed):
         fail("invalid_scalar", "/envelope/content_sha256", 4)
     validate_scalars(payload, name, "/envelope/payload")
