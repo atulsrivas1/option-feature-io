@@ -25,7 +25,7 @@ RESULT = {
     "valuation_ns": 0, "knowledge_cutoff_ns": 0, "model_id": "option-bsm1",
     "formula_version": "r25-formulas1", "producer_model_id": None, "producer_formula_id": None,
     "config_sha256": "3" * 64, "snapshot_sha256": "4" * 64,
-    "contracts_package_version": "0.1.0a1", "calculation_package_version": "0.1.0a1",
+    "contracts_package_version": "0.2.0a1", "calculation_package_version": "0.2.0a1",
 }
 REQUEST = {
     "schema_version": "option-request1", "contract_ids": ["OPTION-1"],
