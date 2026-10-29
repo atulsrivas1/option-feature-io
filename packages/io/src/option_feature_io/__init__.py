@@ -8,7 +8,7 @@ from .sink import DuckDBSink, validate_publication
 from .wire import (decode_request, decode_results, decode_snapshot,
                    encode_request, encode_results, encode_snapshot)
 
-__version__ = "0.1.0a1"
+__version__ = "0.2.0a1"
 __all__ = [
     "snapshot_from_synthetic_mapping", "PublicationConflict", "StorageIntegrityError",
     "StorageSchemaError", "WireFormatError", "CommitReceipt", "Publication",
